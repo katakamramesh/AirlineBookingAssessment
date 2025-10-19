@@ -31,7 +31,7 @@ import java.util.stream.Collectors;
 public class DatabaseService {
 
     private static final Logger logger = LoggerFactory.getLogger(DatabaseService.class);
-    private final Pool  pool;
+    private final Pool pool;
     private final Random random = new Random();
 
     public DatabaseService(Vertx vertx, String jdbcUrl, String user, String password) {
@@ -207,13 +207,30 @@ public class DatabaseService {
                         return Future.failedFuture("Flight not found");
                     }
                     Row flightRow = rows.iterator().next();
-                    int availableSeats = flightRow.getInteger("available_seats");
+
+                    // Use column name or index based on what works
+                    Integer availableSeats;
+                    BigDecimal price;
+
+                    try {
+                        availableSeats = flightRow.getInteger("available_seats");
+                        price = flightRow.getBigDecimal("price");
+                    } catch (Exception e) {
+                        // Try uppercase if lowercase fails
+                        try {
+                            availableSeats = flightRow.getInteger("AVAILABLE_SEATS");
+                            price = flightRow.getBigDecimal("PRICE");
+                        } catch (Exception e2) {
+                            // Try by index as last resort
+                            price = flightRow.getBigDecimal(0);
+                            availableSeats = flightRow.getInteger(1);
+                        }
+                    }
 
                     if (availableSeats <= 0) {
                         return Future.failedFuture("No available seats on this flight");
                     }
 
-                    BigDecimal price = flightRow.getBigDecimal("price");
                     String bookingRef = generateBookingReference();
 
                     String insertSql = "INSERT INTO bookings (booking_reference, passenger_id, flight_id, " +
@@ -275,13 +292,13 @@ public class DatabaseService {
                     }
 
                     Row row = rows.iterator().next();
-                    String status = row.getString("status");
+                    String status = getStringValue(row, "status", "STATUS");
 
                     if ("CANCELLED".equals(status)) {
                         return Future.failedFuture("Booking already cancelled");
                     }
 
-                    Long flightId = row.getLong("flight_id");
+                    Long flightId = getLongValue(row, "flight_id", "FLIGHT_ID");
 
                     return conn.preparedQuery("UPDATE bookings SET status = 'CANCELLED' WHERE id = ?")
                             .execute(Tuple.of(id))
@@ -304,63 +321,111 @@ public class DatabaseService {
                 });
     }
 
-    // Mapping methods
+    // Helper methods for column name handling
+    private String getStringValue(Row row, String lowerCase, String upperCase) {
+        try {
+            return row.getString(lowerCase);
+        } catch (Exception e) {
+            return row.getString(upperCase);
+        }
+    }
+
+    private Long getLongValue(Row row, String lowerCase, String upperCase) {
+        try {
+            return row.getLong(lowerCase);
+        } catch (Exception e) {
+            return row.getLong(upperCase);
+        }
+    }
+
+    private Integer getIntegerValue(Row row, String lowerCase, String upperCase) {
+        try {
+            return row.getInteger(lowerCase);
+        } catch (Exception e) {
+            return row.getInteger(upperCase);
+        }
+    }
+
+    private BigDecimal getBigDecimalValue(Row row, String lowerCase, String upperCase) {
+        try {
+            return row.getBigDecimal(lowerCase);
+        } catch (Exception e) {
+            return row.getBigDecimal(upperCase);
+        }
+    }
+
+    private LocalDateTime getLocalDateTimeValue(Row row, String lowerCase, String upperCase) {
+        try {
+            return row.getLocalDateTime(lowerCase);
+        } catch (Exception e) {
+            return row.getLocalDateTime(upperCase);
+        }
+    }
+
+    private LocalDate getLocalDateValue(Row row, String lowerCase, String upperCase) {
+        try {
+            return row.getLocalDate(lowerCase);
+        } catch (Exception e) {
+            return row.getLocalDate(upperCase);
+        }
+    }
+
+    // Mapping methods with case-insensitive column names
     private Airline mapRowToAirline(Row row) {
         return new Airline(
-                row.getLong("ID"),
-                row.getString("CODE"),
-                row.getString("NAME"),
-                row.getString("COUNTRY"),
-                row.getLocalDateTime("CREATED_AT"),
-                row.getLocalDateTime("UPDATED_AT")
+                getLongValue(row, "id", "ID"),
+                getStringValue(row, "code", "CODE"),
+                getStringValue(row, "name", "NAME"),
+                getStringValue(row, "country", "COUNTRY"),
+                getLocalDateTimeValue(row, "created_at", "CREATED_AT"),
+                getLocalDateTimeValue(row, "updated_at", "UPDATED_AT")
         );
     }
 
     private Flight mapRowToFlight(Row row) {
         return new Flight(
-                row.getLong("ID"),
-                row.getString("FLIGHT_NUMBER"),
-                row.getLong("AIRLINE_ID"),
-                row.getString("DEPARTURE_AIRPORT"),
-                row.getString("ARRIVAL_AIRPORT"),
-                row.getLocalDateTime("DEPARTURE_TIME"),
-                row.getLocalDateTime("ARRIVAL_TIME"),
-                row.getInteger("AVAILABLE_SEATS"),
-                row.getInteger("TOTAL_SEATS"),
-                row.getBigDecimal("PRICE"),
-                row.getString("STATUS"),
-                row.getLocalDateTime("CREATED_AT"),
-                row.getLocalDateTime("UPDATED_AT")
+                getLongValue(row, "id", "ID"),
+                getStringValue(row, "flight_number", "FLIGHT_NUMBER"),
+                getLongValue(row, "airline_id", "AIRLINE_ID"),
+                getStringValue(row, "departure_airport", "DEPARTURE_AIRPORT"),
+                getStringValue(row, "arrival_airport", "ARRIVAL_AIRPORT"),
+                getLocalDateTimeValue(row, "departure_time", "DEPARTURE_TIME"),
+                getLocalDateTimeValue(row, "arrival_time", "ARRIVAL_TIME"),
+                getIntegerValue(row, "available_seats", "AVAILABLE_SEATS"),
+                getIntegerValue(row, "total_seats", "TOTAL_SEATS"),
+                getBigDecimalValue(row, "price", "PRICE"),
+                getStringValue(row, "status", "STATUS"),
+                getLocalDateTimeValue(row, "created_at", "CREATED_AT"),
+                getLocalDateTimeValue(row, "updated_at", "UPDATED_AT")
         );
     }
 
     private Passenger mapRowToPassenger(Row row) {
-        LocalDate dob = row.getLocalDate("DATE_OF_BIRTH");
         return new Passenger(
-                row.getLong("ID"),
-                row.getString("FIRST_NAME"),
-                row.getString("LAST_NAME"),
-                row.getString("EMAIL"),
-                row.getString("PHONE"),
-                row.getString("PASSPORT_NUMBER"),
-                dob,
-                row.getLocalDateTime("CREATED_AT"),
-                row.getLocalDateTime("UPDATED_AT")
+                getLongValue(row, "id", "ID"),
+                getStringValue(row, "first_name", "FIRST_NAME"),
+                getStringValue(row, "last_name", "LAST_NAME"),
+                getStringValue(row, "email", "EMAIL"),
+                getStringValue(row, "phone", "PHONE"),
+                getStringValue(row, "passport_number", "PASSPORT_NUMBER"),
+                getLocalDateValue(row, "date_of_birth", "DATE_OF_BIRTH"),
+                getLocalDateTimeValue(row, "created_at", "CREATED_AT"),
+                getLocalDateTimeValue(row, "updated_at", "UPDATED_AT")
         );
     }
 
     private Booking mapRowToBooking(Row row) {
         return new Booking(
-                row.getLong("ID"),
-                row.getString("BOOKING_REFERENCE"),
-                row.getLong("PASSENGER_ID"),
-                row.getLong("FLIGHT_ID"),
-                row.getLocalDateTime("BOOKING_DATE"),
-                row.getString("SEAT_NUMBER"),
-                row.getString("STATUS"),
-                row.getBigDecimal("TOTAL_AMOUNT"),
-                row.getLocalDateTime("CREATED_AT"),
-                row.getLocalDateTime("UPDATED_AT")
+                getLongValue(row, "id", "ID"),
+                getStringValue(row, "booking_reference", "BOOKING_REFERENCE"),
+                getLongValue(row, "passenger_id", "PASSENGER_ID"),
+                getLongValue(row, "flight_id", "FLIGHT_ID"),
+                getLocalDateTimeValue(row, "booking_date", "BOOKING_DATE"),
+                getStringValue(row, "seat_number", "SEAT_NUMBER"),
+                getStringValue(row, "status", "STATUS"),
+                getBigDecimalValue(row, "total_amount", "TOTAL_AMOUNT"),
+                getLocalDateTimeValue(row, "created_at", "CREATED_AT"),
+                getLocalDateTimeValue(row, "updated_at", "UPDATED_AT")
         );
     }
 
