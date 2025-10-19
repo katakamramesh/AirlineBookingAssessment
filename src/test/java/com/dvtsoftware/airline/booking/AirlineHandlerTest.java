@@ -1,5 +1,5 @@
+// File 1: AirlineHandlerTest.java
 package com.dvtsoftware.airline.booking;
-
 
 import com.dvtsoftware.airline.booking.handler.AirlineHandler;
 import com.dvtsoftware.airline.booking.service.DatabaseService;
@@ -28,19 +28,16 @@ public class AirlineHandlerTest {
 
     @BeforeEach
     void setUp(Vertx vertx, VertxTestContext testContext) {
-        // Initialize database
-        String jdbcUrl = "jdbc:h2:mem:test_airline_booking;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE";
+        String jdbcUrl = "jdbc:h2:mem:test_airline;MODE=MySQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE";
         databaseService = new DatabaseService(vertx, jdbcUrl, "sa", "");
 
         databaseService.initialize()
                 .compose(v -> {
-                    // Setup router
                     Router router = Router.router(vertx);
                     router.route().handler(BodyHandler.create());
 
                     AirlineHandler handler = new AirlineHandler(databaseService);
 
-                    // Routes
                     router.post("/airlines").handler(handler::createAirline);
                     router.get("/airlines").handler(handler::getAllAirlines);
                     router.post("/flights").handler(handler::createFlight);
@@ -52,7 +49,6 @@ public class AirlineHandlerTest {
                     router.delete("/bookings/:id").handler(handler::cancelBooking);
                     router.get("/passengers/:id/bookings").handler(handler::getPassengerBookings);
 
-                    // Start server
                     return vertx.createHttpServer()
                             .requestHandler(router)
                             .listen(port);
@@ -77,7 +73,7 @@ public class AirlineHandlerTest {
 
     @Test
     void testGetAllAirlines(Vertx vertx, VertxTestContext testContext) {
-        client.get(port, "localhost", "/airlines")
+        client.get(port, "0.0.0.0", "/airlines")
                 .as(BodyCodec.jsonArray())
                 .send()
                 .onComplete(testContext.succeeding(response -> testContext.verify(() -> {
@@ -95,7 +91,7 @@ public class AirlineHandlerTest {
                 .put("name", "Virgin Atlantic")
                 .put("country", "United Kingdom");
 
-        client.post(port, "localhost", "/airlines")
+        client.post(port, "0.0.0.0", "/airlines")
                 .as(BodyCodec.jsonObject())
                 .sendJsonObject(newAirline)
                 .onComplete(testContext.succeeding(response -> testContext.verify(() -> {
@@ -110,7 +106,7 @@ public class AirlineHandlerTest {
 
     @Test
     void testSearchFlights(Vertx vertx, VertxTestContext testContext) {
-        client.get(port, "localhost", "/flights/search?from=DXB&to=LHR")
+        client.get(port, "0.0.0.0", "/flights/search?from=DXB&to=LHR")
                 .as(BodyCodec.jsonArray())
                 .send()
                 .onComplete(testContext.succeeding(response -> testContext.verify(() -> {
@@ -123,7 +119,7 @@ public class AirlineHandlerTest {
 
     @Test
     void testSearchFlightsMissingParams(Vertx vertx, VertxTestContext testContext) {
-        client.get(port, "localhost", "/flights/search")
+        client.get(port, "0.0.0.0", "/flights/search")
                 .as(BodyCodec.jsonObject())
                 .send()
                 .onComplete(testContext.succeeding(response -> testContext.verify(() -> {
@@ -134,7 +130,7 @@ public class AirlineHandlerTest {
 
     @Test
     void testGetFlightById(Vertx vertx, VertxTestContext testContext) {
-        client.get(port, "localhost", "/flights/1")
+        client.get(port, "0.0.0.0", "/flights/1")
                 .as(BodyCodec.jsonObject())
                 .send()
                 .onComplete(testContext.succeeding(response -> testContext.verify(() -> {
@@ -148,7 +144,7 @@ public class AirlineHandlerTest {
 
     @Test
     void testGetFlightByIdNotFound(Vertx vertx, VertxTestContext testContext) {
-        client.get(port, "localhost", "/flights/99999")
+        client.get(port, "0.0.0.0", "/flights/99999")
                 .as(BodyCodec.jsonObject())
                 .send()
                 .onComplete(testContext.succeeding(response -> testContext.verify(() -> {
@@ -167,7 +163,7 @@ public class AirlineHandlerTest {
                 .put("passportNumber", "US123456")
                 .put("dateOfBirth", "1990-01-15");
 
-        client.post(port, "localhost", "/passengers")
+        client.post(port, "0.0.0.0", "/passengers")
                 .as(BodyCodec.jsonObject())
                 .sendJsonObject(newPassenger)
                 .onComplete(testContext.succeeding(response -> testContext.verify(() -> {
@@ -186,7 +182,7 @@ public class AirlineHandlerTest {
                 .put("flightId", 1)
                 .put("seatNumber", "25A");
 
-        client.post(port, "localhost", "/bookings")
+        client.post(port, "0.0.0.0", "/bookings")
                 .as(BodyCodec.jsonObject())
                 .sendJsonObject(newBooking)
                 .onComplete(testContext.succeeding(response -> testContext.verify(() -> {
@@ -202,7 +198,7 @@ public class AirlineHandlerTest {
 
     @Test
     void testGetBookingById(Vertx vertx, VertxTestContext testContext) {
-        client.get(port, "localhost", "/bookings/1")
+        client.get(port, "0.0.0.0", "/bookings/1")
                 .as(BodyCodec.jsonObject())
                 .send()
                 .onComplete(testContext.succeeding(response -> testContext.verify(() -> {
@@ -215,19 +211,17 @@ public class AirlineHandlerTest {
 
     @Test
     void testCancelBooking(Vertx vertx, VertxTestContext testContext) {
-        // First create a booking
         JsonObject newBooking = new JsonObject()
                 .put("passengerId", 2)
                 .put("flightId", 2)
                 .put("seatNumber", "15B");
 
-        client.post(port, "localhost", "/bookings")
+        client.post(port, "0.0.0.0", "/bookings")
                 .as(BodyCodec.jsonObject())
                 .sendJsonObject(newBooking)
                 .compose(createResponse -> {
                     Long bookingId = createResponse.body().getLong("id");
-                    // Then cancel it
-                    return client.delete(port, "localhost", "/bookings/" + bookingId)
+                    return client.delete(port, "0.0.0.0", "/bookings/" + bookingId)
                             .as(BodyCodec.jsonObject())
                             .send();
                 })
@@ -239,7 +233,7 @@ public class AirlineHandlerTest {
 
     @Test
     void testGetPassengerBookings(Vertx vertx, VertxTestContext testContext) {
-        client.get(port, "localhost", "/passengers/1/bookings")
+        client.get(port, "0.0.0.0", "/passengers/1/bookings")
                 .as(BodyCodec.jsonArray())
                 .send()
                 .onComplete(testContext.succeeding(response -> testContext.verify(() -> {
@@ -264,7 +258,7 @@ public class AirlineHandlerTest {
                 .put("price", 299.99)
                 .put("status", "SCHEDULED");
 
-        client.post(port, "localhost", "/flights")
+        client.post(port, "0.0.0.0", "/flights")
                 .as(BodyCodec.jsonObject())
                 .sendJsonObject(newFlight)
                 .onComplete(testContext.succeeding(response -> testContext.verify(() -> {

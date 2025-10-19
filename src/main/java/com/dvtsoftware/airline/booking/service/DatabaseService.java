@@ -307,60 +307,60 @@ public class DatabaseService {
     // Mapping methods
     private Airline mapRowToAirline(Row row) {
         return new Airline(
-                row.getLong("id"),
-                row.getString("code"),
-                row.getString("name"),
-                row.getString("country"),
-                row.getLocalDateTime("created_at"),
-                row.getLocalDateTime("updated_at")
+                row.getLong("ID"),
+                row.getString("CODE"),
+                row.getString("NAME"),
+                row.getString("COUNTRY"),
+                row.getLocalDateTime("CREATED_AT"),
+                row.getLocalDateTime("UPDATED_AT")
         );
     }
 
     private Flight mapRowToFlight(Row row) {
         return new Flight(
-                row.getLong("id"),
-                row.getString("flight_number"),
-                row.getLong("airline_id"),
-                row.getString("departure_airport"),
-                row.getString("arrival_airport"),
-                row.getLocalDateTime("departure_time"),
-                row.getLocalDateTime("arrival_time"),
-                row.getInteger("available_seats"),
-                row.getInteger("total_seats"),
-                row.getBigDecimal("price"),
-                row.getString("status"),
-                row.getLocalDateTime("created_at"),
-                row.getLocalDateTime("updated_at")
+                row.getLong("ID"),
+                row.getString("FLIGHT_NUMBER"),
+                row.getLong("AIRLINE_ID"),
+                row.getString("DEPARTURE_AIRPORT"),
+                row.getString("ARRIVAL_AIRPORT"),
+                row.getLocalDateTime("DEPARTURE_TIME"),
+                row.getLocalDateTime("ARRIVAL_TIME"),
+                row.getInteger("AVAILABLE_SEATS"),
+                row.getInteger("TOTAL_SEATS"),
+                row.getBigDecimal("PRICE"),
+                row.getString("STATUS"),
+                row.getLocalDateTime("CREATED_AT"),
+                row.getLocalDateTime("UPDATED_AT")
         );
     }
 
     private Passenger mapRowToPassenger(Row row) {
-        LocalDate dob = row.getLocalDate("date_of_birth");
+        LocalDate dob = row.getLocalDate("DATE_OF_BIRTH");
         return new Passenger(
-                row.getLong("id"),
-                row.getString("first_name"),
-                row.getString("last_name"),
-                row.getString("email"),
-                row.getString("phone"),
-                row.getString("passport_number"),
+                row.getLong("ID"),
+                row.getString("FIRST_NAME"),
+                row.getString("LAST_NAME"),
+                row.getString("EMAIL"),
+                row.getString("PHONE"),
+                row.getString("PASSPORT_NUMBER"),
                 dob,
-                row.getLocalDateTime("created_at"),
-                row.getLocalDateTime("updated_at")
+                row.getLocalDateTime("CREATED_AT"),
+                row.getLocalDateTime("UPDATED_AT")
         );
     }
 
     private Booking mapRowToBooking(Row row) {
         return new Booking(
-                row.getLong("id"),
-                row.getString("booking_reference"),
-                row.getLong("passenger_id"),
-                row.getLong("flight_id"),
-                row.getLocalDateTime("booking_date"),
-                row.getString("seat_number"),
-                row.getString("status"),
-                row.getBigDecimal("total_amount"),
-                row.getLocalDateTime("created_at"),
-                row.getLocalDateTime("updated_at")
+                row.getLong("ID"),
+                row.getString("BOOKING_REFERENCE"),
+                row.getLong("PASSENGER_ID"),
+                row.getLong("FLIGHT_ID"),
+                row.getLocalDateTime("BOOKING_DATE"),
+                row.getString("SEAT_NUMBER"),
+                row.getString("STATUS"),
+                row.getBigDecimal("TOTAL_AMOUNT"),
+                row.getLocalDateTime("CREATED_AT"),
+                row.getLocalDateTime("UPDATED_AT")
         );
     }
 
