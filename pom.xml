@@ -15,28 +15,32 @@
     <properties>
         <maven.compiler.release>21</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        
+
         <!-- Core framework versions -->
         <vertx.version>5.0.4</vertx.version>
-        
+
         <!-- Testing framework versions -->
         <junit.version>5.11.3</junit.version>
         <assertj.version>3.26.3</assertj.version>
-        
+
         <!-- Database -->
         <h2.version>2.3.232</h2.version>
-        
+
         <!-- JSON Processing - Security fixes for CVEs -->
         <jackson.version>2.17.2</jackson.version>
-        
+
         <!-- Logging -->
         <logback.version>1.5.18</logback.version>
 
         <!-- Maven plugins -->
         <maven-compiler-plugin.version>3.13.0</maven-compiler-plugin.version>
         <maven-surefire-plugin.version>3.2.5</maven-surefire-plugin.version>
+        <maven-shade-plugin.version>3.5.1</maven-shade-plugin.version>
         <exec-maven-plugin.version>3.2.0</exec-maven-plugin.version>
         <jacoco-maven-plugin.version>0.8.12</jacoco-maven-plugin.version>
+
+        <!-- Main class for executable JAR -->
+        <main.verticle>com.dvtsoftware.airline.booking.MainVerticle</main.verticle>
     </properties>
 
     <dependencyManagement>
@@ -49,7 +53,7 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
-            
+
             <!-- Jackson BOM for consistent JSON processing versions -->
             <dependency>
                 <groupId>com.fasterxml.jackson</groupId>
@@ -67,13 +71,13 @@
             <groupId>io.vertx</groupId>
             <artifactId>vertx-core</artifactId>
         </dependency>
-        
+
         <!-- Vert.x Web -->
         <dependency>
             <groupId>io.vertx</groupId>
             <artifactId>vertx-web</artifactId>
         </dependency>
-        
+
         <!-- Vert.x SQL Client -->
         <dependency>
             <groupId>io.vertx</groupId>
@@ -130,21 +134,21 @@
             <artifactId>vertx-web-client</artifactId>
             <scope>test</scope>
         </dependency>
-        
+
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
             <version>${junit.version}</version>
             <scope>test</scope>
         </dependency>
-        
+
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-engine</artifactId>
             <version>${junit.version}</version>
             <scope>test</scope>
         </dependency>
-        
+
         <dependency>
             <groupId>org.assertj</groupId>
             <artifactId>assertj-core</artifactId>
@@ -176,12 +180,52 @@
                 </configuration>
             </plugin>
 
+            <!-- Maven Shade Plugin - Creates executable fat JAR with all dependencies -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>${maven-shade-plugin.version}</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <transformers>
+                                <!-- Add Main-Class to manifest -->
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                    <mainClass>${main.verticle}</mainClass>
+                                </transformer>
+                                <!-- Merge service files -->
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                                <!-- Append resources -->
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+                                    <resource>META-INF/services/io.vertx.core.spi.VertxServiceProvider</resource>
+                                </transformer>
+                            </transformers>
+                            <filters>
+                                <filter>
+                                    <artifact>*:*</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/*.SF</exclude>
+                                        <exclude>META-INF/*.DSA</exclude>
+                                        <exclude>META-INF/*.RSA</exclude>
+                                    </excludes>
+                                </filter>
+                            </filters>
+                            <finalName>${project.artifactId}-${project.version}</finalName>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
                 <version>${exec-maven-plugin.version}</version>
                 <configuration>
-                    <mainClass>com.dvtsoftware.airline.booking.MainVerticle</mainClass>
+                    <mainClass>${main.verticle}</mainClass>
                 </configuration>
             </plugin>
 
@@ -198,7 +242,7 @@
                             <goal>prepare-agent</goal>
                         </goals>
                     </execution>
-                    
+
                     <!-- Generate coverage report -->
                     <execution>
                         <id>report</id>
@@ -207,7 +251,7 @@
                             <goal>report</goal>
                         </goals>
                     </execution>
-                    
+
                     <!-- Enforce a minimum coverage threshold -->
                     <execution>
                         <id>check</id>

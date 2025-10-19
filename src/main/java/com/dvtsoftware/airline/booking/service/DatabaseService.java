@@ -14,6 +14,7 @@ import io.vertx.sqlclient.SqlConnection;
 import io.vertx.sqlclient.Tuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import io.vertx.sqlclient.Pool;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
@@ -30,7 +31,7 @@ import java.util.stream.Collectors;
 public class DatabaseService {
 
     private static final Logger logger = LoggerFactory.getLogger(DatabaseService.class);
-    private final JDBCPool pool;
+    private final Pool  pool;
     private final Random random = new Random();
 
     public DatabaseService(Vertx vertx, String jdbcUrl, String user, String password) {
@@ -42,7 +43,7 @@ public class DatabaseService {
         PoolOptions poolOptions = new PoolOptions()
                 .setMaxSize(10);
 
-        this.pool = (JDBCPool) JDBCPool.pool(vertx, connectOptions, poolOptions);
+        this.pool = JDBCPool.pool(vertx, connectOptions, poolOptions);
     }
 
     public Future<Void> initialize() {

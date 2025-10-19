@@ -33,7 +33,7 @@ CREATE TABLE flights (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (airline_id) REFERENCES airlines(id) ON DELETE CASCADE,
-    UNIQUE KEY unique_flight (flight_number, departure_time)
+CONSTRAINT unique_flight UNIQUE (flight_number, departure_time)
 );
 
 -- Create Passengers table

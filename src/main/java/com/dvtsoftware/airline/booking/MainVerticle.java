@@ -61,7 +61,7 @@ public class MainVerticle extends AbstractVerticle {
                             .put("port", 8080)
                             .put("host", "localhost"))
                     .put("database", new JsonObject()
-                            .put("url", "jdbc:h2:mem:airline_booking;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE")
+                            .put("url", "jdbc:h2:mem:airline_booking;MODE=MySQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE")
                             .put("user", "sa")
                             .put("password", ""));
         }
@@ -122,7 +122,7 @@ public class MainVerticle extends AbstractVerticle {
 
         return vertx.createHttpServer()
                 .requestHandler(router)
-                .listen(port, host)
+                .listen(port, "0.0.0.0")
                 .map(server -> {
                     logger.info("HTTP server started on {}:{}", host, port);
                     return null;
